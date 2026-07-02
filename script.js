@@ -1,40 +1,177 @@
-document.addEventListener('DOMContentLoaded', () => {
-  // ---- Stage management ----
-  function showStage(stageId) {
-    document.querySelectorAll('.stage').forEach(el => el.classList.remove('active'));
-    document.getElementById(stageId).classList.add('active');
-  }
+// === Параллакс при скролле окна ===
+const parallaxItems = document.querySelectorAll('[data-speed]');
+function updateParallax() {
+    const scrollY = window.scrollY || window.pageYOffset;
+    parallaxItems.forEach(el => {
+        const speed = parseFloat(el.getAttribute('data-speed')) || 0;
+        el.style.transform = `translateY(${-(scrollY * speed)}px)`;
+    });
+}
+window.addEventListener('scroll', updateParallax, { passive: true });
+updateParallax();
 
-  // ---- Canvas setup ----
-  const canvas = document.getElementById('matrix');
-  const ctx = canvas.getContext('2d');
-  let width, height;
+// === Движение от мыши для боковых веток и фонариков ===
+const branchL = document.getElementById('branchLeft');
+const branchR = document.getElementById('branchRight');
+const lanterns = document.querySelectorAll('.lantern');
+document.addEventListener('mousemove', function(e) {
+    const x = (e.clientX / window.innerWidth - 0.5) * 30;
+    const y = (e.clientY / window.innerHeight - 0.5) * 20;
+    if (window.innerWidth > 768) {
+        if (branchL) branchL.style.transform = `translate(${x * 0.5}px, ${y * 0.3}px)`;
+        if (branchR) branchR.style.transform = `translate(${-x * 0.5}px, ${y * 0.3}px)`;
+        lanterns.forEach(l => {
+            const sp = parseFloat(l.getAttribute('data-speed')) || 0.5;
+            l.style.transform = `translate(${x * sp * 0.6}px, ${y * sp * 0.4}px)`;
+        });
+    }
+});
 
-  function resizeCanvas() {
-    width = canvas.width = window.innerWidth;
-    height = canvas.height = window.innerHeight;
-  }
-  window.addEventListener('resize', resizeCanvas);
-  resizeCanvas();
+// === Canvas: лепестки, светлячки, туман ===
+const canvas = document.getElementById('particlesCanvas');
+const ctx = canvas.getContext('2d');
+let W, H;
+function resize() {
+    W = canvas.width = window.innerWidth;
+    H = canvas.height = window.innerHeight;
+}
+window.addEventListener('resize', resize);
+resize();
 
-  // ---- Background matrix rain (light) ----
-  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789@#$%&';
-  const fontSize = 14;
-  let columns, drops;
-  function initRain() {
-    columns = Math.floor(width / fontSize);
-    drops = Array(columns).fill(0);
-  }
-  initRain();
-  window.addEventListener('resize', initRain);
+const particles = [];
+const PETALS = 70, FIREFLIES = 25, MIST = 8;
+function rnd(min, max) { return Math.random() * (max - min) + min; }
 
-  function drawRain() {
-    ctx.fillStyle = 'rgba(0, 0, 0, 0.05)';
-    ctx.fillRect(0, 0, width, height);
-    ctx.fillStyle = '#0f0';
-    ctx.font = fontSize + 'px monospace';
-    for (let i = 0; i < drops.length; i++) {
-      const text = chars[Math.floor(Math.random() * chars.length)];
+function petal() {
+    return {
+        type: 'petal',
+        x: rnd(0, W), y: rnd(-H, 0),
+        size: rnd(5, 18),
+        vy: rnd(0.4, 1.6), vx: rnd(-0.6, 0.6),
+        rot: rnd(0, Math.PI*2), drot: rnd(-0.02, 0.02),
+        opacity: rnd(0.4, 0.9),
+        color: `rgba(255, ${rnd(150,190)}, ${rnd(180,220)}`
+    };
+}
+function firefly() {
+    return {
+        type: 'firefly',
+        x: rnd(0, W), y: rnd(0, H),
+        size: rnd(2, 5),
+        vx: rnd(-0.2, 0.2), vy: rnd(-0.2, 0.2),
+        phase: rnd(0, Math.PI*2),
+        base: rnd(0.3, 0.8)
+    };
+}
+function mist() {
+    return {
+        type: 'mist',
+        x: rnd(0, W), y: rnd(H*0.5, H),
+        r: rnd(25, 60),
+        vx: rnd(-0.08, 0.08),
+        opacity: rnd(0.02, 0.05)
+    };
+}
+
+for (let i=0; i<PETALS; i++) particles.push(petal());
+for (let i=0; i<FIREFLIES; i++) particles.push(firefly());
+for (let i=0; i<MIST; i++) particles.push(mist());
+
+function drawPetal(p) {
+    ctx.save();
+    ctx.translate(p.x, p.y);
+    ctx.rotate(p.rot);
+    ctx.globalAlpha = p.opacity;
+    ctx.fillStyle = p.color + `, ${p.opacity})`;
+    ctx.beginPath();
+    ctx.ellipse(0, 0, p.size*0.6, p.size*0.3, 0, 0, Math.PI*2);
+    ctx.fill();
+    ctx.strokeStyle = 'rgba(255,255,255,0.3)';
+    ctx.lineWidth = 0.4;
+    ctx.beginPath(); ctx.moveTo(0, -p.size*0.2); ctx.lineTo(0, p.size*0.2); ctx.stroke();
+    ctx.restore();
+}
+function drawFirefly(f) {
+    const t = Date.now()*0.004 + f.phase;
+    const glow = Math.sin(t)*0.5 + 0.5;
+    ctx.beginPath();
+    ctx.arc(f.x, f.y, f.size, 0, Math.PI*2);
+    ctx.fillStyle = `rgba(255, 240, 150, ${f.base * glow})`;
+    ctx.shadowColor = 'rgba(255, 240, 100, 0.8)';
+    ctx.shadowBlur = 12;
+    ctx.fill();
+    ctx.shadowBlur = 0;
+}
+function drawMist(m) {
+    const grad = ctx.createRadialGradient(m.x, m.y, 0, m.x, m.y, m.r);
+    grad.addColorStop(0, `rgba(255, 220, 240, ${m.opacity})`);
+    grad.addColorStop(1, 'rgba(255, 220, 240, 0)');
+    ctx.fillStyle = grad;
+    ctx.beginPath(); ctx.arc(m.x, m.y, m.r, 0, Math.PI*2); ctx.fill();
+}
+
+function animate() {
+    ctx.clearRect(0, 0, W, H);
+    particles.forEach(p => {
+        if (p.type === 'petal') {
+            p.y += p.vy; p.x += p.vx; p.rot += p.drot;
+            if (p.y > H+50 || p.x<-50 || p.x>W+50) {
+                p.x = rnd(0, W); p.y = -rnd(50, 200);
+            }
+            drawPetal(p);
+        } else if (p.type === 'firefly') {
+            p.x += p.vx; p.y += p.vy;
+            if (p.x<0 || p.x>W) p.vx *= -1;
+            if (p.y<0 || p.y>H) p.vy *= -1;
+            drawFirefly(p);
+        } else if (p.type === 'mist') {
+            p.x += p.vx;
+            if (p.x < -p.r) p.x = W + p.r;
+            if (p.x > W + p.r) p.x = -p.r;
+            drawMist(p);
+        }
+    });
+    requestAnimationFrame(animate);
+}
+animate();
+
+// === Модальное окно + скачивание файла из static ===
+document.getElementById('downloadBtn').addEventListener('click', function() {
+    // Открываем туториал
+    document.getElementById('tutorialModal').classList.add('active');
+    // Скачиваем файл
+    const link = document.createElement('a');
+    link.href = '/static/sakuraexp-script.txt';
+    link.download = 'sakuraexp-script.txt';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+});
+
+document.getElementById('closeModalBtn').addEventListener('click', function() {
+    document.getElementById('tutorialModal').classList.remove('active');
+});
+document.getElementById('tutorialModal').addEventListener('click', function(e) {
+    if (e.target === this) this.classList.remove('active');
+});
+
+// === Появление карточек ===
+const cards = document.querySelectorAll('.feature-card');
+const observer = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+        if (entry.isIntersecting) entry.target.classList.add('visible');
+    });
+}, { threshold: 0.2 });
+cards.forEach(c => observer.observe(c));
+
+// Плавный скролл по якорям
+document.querySelectorAll('a[href^="#"]').forEach(a => {
+    a.addEventListener('click', function(e) {
+        e.preventDefault();
+        const target = document.querySelector(this.getAttribute('href'));
+        if (target) target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    });
+});      const text = chars[Math.floor(Math.random() * chars.length)];
       ctx.fillText(text, i * fontSize, drops[i] * fontSize);
       if (drops[i] * fontSize > height && Math.random() > 0.975) {
         drops[i] = 0;
