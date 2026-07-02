@@ -1,102 +1,120 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Terminal Quest</title>
-  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SakuraExp - Embrace the Blossom</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
 </head>
 <body>
-  <canvas id="matrix"></canvas>
+    <!-- Параллакс-слои -->
+    <div class="parallax-bg stars" data-speed="0.03"></div>
+    <div class="parallax-bg mountains-far" data-speed="0.08"></div>
+    <div class="parallax-bg mountains-near" data-speed="0.15"></div>
+    <div class="parallax-bg trees" data-speed="0.25"></div>
+    <div class="parallax-bg branches" data-speed="0.4"></div>
 
-  <!-- Stage 1: Hidden Digits in Terminal -->
-  <div id="quest" class="stage active">
-    <div class="terminal-window">
-      <div class="terminal-header">
-        <span class="btn close"></span>
-        <span class="btn min"></span>
-        <span class="btn max"></span>
-        <span class="title">quest@terminal: ~</span>
-      </div>
-      <div class="terminal-body" id="terminal-output">
-        <!-- Simulated output with hidden digits (7,3,9) -->
-        <p><span class="prompt">></span> initializing secure shell...</p>
-        <p><span class="prompt">></span> kernel module v2.1 loaded</p>
-        <p><span class="prompt">></span> scanning node <span class="hidden-digit">7</span>a:f3:b2:00:11</p>
-        <p><span class="prompt">></span> auth attempt <span class="hidden-digit">3</span> of <span class="hidden-digit">9</span>...</p>
-        <p><span class="prompt">></span> connection refused (port 22)</p>
-        <p><span class="prompt">></span> fallback to emergency protocol</p>
-        <p><span class="prompt">></span> waiting for manual override...</p>
-        <p><span class="prompt">></span> <span class="blink">▮</span></p>
-      </div>
-    </div>
-    <div class="input-line">
-      <span class="prompt">></span>
-      <input type="text" id="password-input" placeholder="enter access code" maxlength="3" autofocus>
-      <button id="submit-password">[ EXECUTE ]</button>
-    </div>
-    <p id="quest-error" class="error"></p>
-  </div>
+    <!-- Боковые ветки -->
+    <div class="side-branch left" id="branchLeft"></div>
+    <div class="side-branch right" id="branchRight"></div>
 
-  <!-- Stage 2: Door (canvas drawn) -->
-  <div id="door-stage" class="stage">
-    <div id="door-caption" class="door-caption">DECRYPTING LOCK...</div>
-  </div>
+    <!-- Фонарики -->
+    <div class="lantern" style="top:10%; right:5%;" data-speed="0.5"></div>
+    <div class="lantern" style="top:30%; left:3%;" data-speed="0.4"></div>
+    <div class="lantern" style="top:55%; right:7%;" data-speed="0.65"></div>
+    <div class="lantern" style="top:75%; left:8%;" data-speed="0.45"></div>
+    <div class="lantern" style="top:15%; left:15%; width:18px; height:30px;" data-speed="0.3"></div>
+    <div class="lantern" style="top:85%; right:12%; width:20px; height:34px;" data-speed="0.55"></div>
 
-  <!-- Stage 3: Riddle -->
-  <div id="riddle-stage" class="stage">
-    <div class="terminal-window">
-      <div class="terminal-header">
-        <span class="btn close"></span>
-        <span class="btn min"></span>
-        <span class="btn max"></span>
-        <span class="title">enigma.sys</span>
-      </div>
-      <div class="terminal-body">
-        <p class="riddle-question">
-          <span class="prompt">></span> I shine but I'm not a lamp,<br>
-          <span class="prompt">></span> I'm hot but not fire.<br>
-          <span class="prompt">></span> At the center of the system I blaze,<br>
-          <span class="prompt">></span> Who am I? (3 letters)
-        </p>
-        <div class="input-line">
-          <span class="prompt">></span>
-          <input type="text" id="riddle-answer" placeholder="answer">
-          <button id="submit-riddle">[ DECRYPT ]</button>
+    <!-- Canvas для частиц -->
+    <canvas id="particlesCanvas"></canvas>
+
+    <!-- Модальное окно туториала -->
+    <div class="modal-overlay" id="tutorialModal">
+        <div class="modal">
+            <h2>How to install?</h2>
+            <ol>
+                <li>Open your text file</li>
+                <li>Copy your script</li>
+                <li>Open <a href="https://www.tampermonkey.com" target="_blank">tampermonkey.com</a> and install the extension</li>
+                <li>Go to <a href="https://sakura.mba" target="_blank">sakura.mba</a> website</li>
+                <li>Click on the Tampermonkey icon in your browser toolbar</li>
+                <li>Select <strong>"Add new script"</strong></li>
+                <li>Paste your script into the <strong>"New Script"</strong> editor</li>
+                <li>Save and enjoy!</li>
+            </ol>
+            <button class="close-btn" id="closeModalBtn">Got it, thanks!</button>
         </div>
-        <p id="riddle-error" class="error"></p>
-      </div>
     </div>
-  </div>
 
-  <!-- Stage 4: Bio -->
-  <div id="bio-stage" class="stage">
-    <div class="terminal-window bio-card">
-      <div class="terminal-header">
-        <span class="btn close"></span>
-        <span class="btn min"></span>
-        <span class="btn max"></span>
-        <span class="title">identity.confirmed</span>
-      </div>
-      <div class="terminal-body">
-        <pre class="ascii-avatar">
-   .---.
-  /     \
-  \.@-@./
-  /`\_/`\
- //  _  \\
-| \     )|_
-/`\_`>  <_/ \
-\__/'---'\__/
-        </pre>
-        <p><span class="label">NAME:</span> fluouliss</p>
-        <p><span class="label">ROLE:</span> Python Developer | Super mega cool boii</p>
-        <p><span class="label">SKILLS:</span> [Python] [Flask] [JS] [Retro UX]</p>
-        <p class="quote">"The best code is the one that unlocks minds."</p>
-      </div>
+    <!-- Навигация -->
+    <nav class="navbar">
+        <div class="logo">SakuraExp</div>
+        <div class="nav-links">
+            <a href="#home">Home</a>
+            <a href="#features">Features</a>
+            <a href="#install">Install</a>
+        </div>
+    </nav>
+
+    <!-- Контент -->
+    <div class="content">
+        <section id="home" class="hero">
+            <h1>SakuraExp</h1>
+            <p class="subtitle">helpfull sakura.mba extension</p>
+            <button class="btn-download" id="downloadBtn">Download</button>
+        </section>
+
+        <section id="features">
+            <h2 class="section-title">— Powerful Features —</h2>
+            <div class="features-grid">
+                <div class="feature-card">
+                    <div class="icon">
+                        <svg viewBox="0 0 24 24"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4zM3 6h18M16 10a4 4 0 0 1-8 0"/></svg>
+                    </div>
+                    <h3>API Buy</h3>
+                    <p>Purchase items directly via integrated API with instant confirmation and secure transactions.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="icon">
+                        <svg viewBox="0 0 24 24"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/><polyline points="12 7 12 15 M9 10 12 7 15 10"/></svg>
+                    </div>
+                    <h3>Fast Avatar Save</h3>
+                    <p>Save any avatar to your collection in one click — no manual downloads, just seamless integration.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="icon">
+                        <svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+                    </div>
+                    <h3>Trade Lounge</h3>
+                    <p>Access a beautifully designed, real-time trading hub to browse and offer trades with other users.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="icon">
+                        <svg viewBox="0 0 24 24"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+                    </div>
+                    <h3>Trade Notifier</h3>
+                    <p>Receive instant desktop notifications for incoming trades, accepted offers, and counter‑offers.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="icon">
+                        <svg viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+                    </div>
+                    <h3>Admin Badge</h3>
+                    <p>Show off your exclusive status with a special badge visible across all supported platforms.</p>
+                </div>
+            </div>
+            <p style="text-align: center; color: #ffb7c5; margin-bottom: 2rem;">
+                …and many more surprises waiting inside!
+            </p>
+            <div class="credits">
+                Creator of the original code – <span>@arz</span><br>
+                Code remaster – <span>@fluouliss</span>
+            </div>
+        </section>
     </div>
-  </div>
 
-  <script src="{{ url_for('static', filename='script.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/script.js') }}"></script>
 </body>
 </html>
