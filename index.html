@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Terminal Quest</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+  <canvas id="matrix"></canvas>
+
+  <!-- Stage 1: Hidden Digits in Terminal -->
+  <div id="quest" class="stage active">
+    <div class="terminal-window">
+      <div class="terminal-header">
+        <span class="btn close"></span>
+        <span class="btn min"></span>
+        <span class="btn max"></span>
+        <span class="title">quest@terminal: ~</span>
+      </div>
+      <div class="terminal-body" id="terminal-output">
+        <!-- Simulated output with hidden digits (7,3,9) -->
+        <p><span class="prompt">></span> initializing secure shell...</p>
+        <p><span class="prompt">></span> kernel module v2.1 loaded</p>
+        <p><span class="prompt">></span> scanning node <span class="hidden-digit">7</span>a:f3:b2:00:11</p>
+        <p><span class="prompt">></span> auth attempt <span class="hidden-digit">3</span> of <span class="hidden-digit">9</span>...</p>
+        <p><span class="prompt">></span> connection refused (port 22)</p>
+        <p><span class="prompt">></span> fallback to emergency protocol</p>
+        <p><span class="prompt">></span> waiting for manual override...</p>
+        <p><span class="prompt">></span> <span class="blink">▮</span></p>
+      </div>
+    </div>
+    <div class="input-line">
+      <span class="prompt">></span>
+      <input type="text" id="password-input" placeholder="enter access code" maxlength="3" autofocus>
+      <button id="submit-password">[ EXECUTE ]</button>
+    </div>
+    <p id="quest-error" class="error"></p>
+  </div>
+
+  <!-- Stage 2: Door (canvas drawn) -->
+  <div id="door-stage" class="stage">
+    <div id="door-caption" class="door-caption">DECRYPTING LOCK...</div>
+  </div>
+
+  <!-- Stage 3: Riddle -->
+  <div id="riddle-stage" class="stage">
+    <div class="terminal-window">
+      <div class="terminal-header">
+        <span class="btn close"></span>
+        <span class="btn min"></span>
+        <span class="btn max"></span>
+        <span class="title">enigma.sys</span>
+      </div>
+      <div class="terminal-body">
+        <p class="riddle-question">
+          <span class="prompt">></span> I shine but I'm not a lamp,<br>
+          <span class="prompt">></span> I'm hot but not fire.<br>
+          <span class="prompt">></span> At the center of the system I blaze,<br>
+          <span class="prompt">></span> Who am I? (3 letters)
+        </p>
+        <div class="input-line">
+          <span class="prompt">></span>
+          <input type="text" id="riddle-answer" placeholder="answer">
+          <button id="submit-riddle">[ DECRYPT ]</button>
+        </div>
+        <p id="riddle-error" class="error"></p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Stage 4: Bio -->
+  <div id="bio-stage" class="stage">
+    <div class="terminal-window bio-card">
+      <div class="terminal-header">
+        <span class="btn close"></span>
+        <span class="btn min"></span>
+        <span class="btn max"></span>
+        <span class="title">identity.confirmed</span>
+      </div>
+      <div class="terminal-body">
+        <pre class="ascii-avatar">
+   .---.
+  /     \
+  \.@-@./
+  /`\_/`\
+ //  _  \\
+| \     )|_
+/`\_`>  <_/ \
+\__/'---'\__/
+        </pre>
+        <p><span class="label">NAME:</span> fluouliss</p>
+        <p><span class="label">ROLE:</span> Python Developer | Super mega cool boii</p>
+        <p><span class="label">SKILLS:</span> [Python] [Flask] [JS] [Retro UX]</p>
+        <p class="quote">"The best code is the one that unlocks minds."</p>
+      </div>
+    </div>
+  </div>
+
+  <script src="{{ url_for('static', filename='script.js') }}"></script>
+</body>
+</html>
